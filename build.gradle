@@ -1,38 +1,53 @@
+import static org.gradle.api.JavaVersion.VERSION_17
+
 plugins {
 	id 'fabric-loom' version '0.10-SNAPSHOT'
 	id 'maven-publish'
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
-
-archivesBaseName = project.archives_base_name
-version = project.mod_version
-group = project.maven_group
+sourceCompatibility = VERSION_17
+targetCompatibility = VERSION_17
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	maven { url 'https://api.modrinth.com/maven'; content { 'maven.modrinth' } }
+	maven { url 'https://cursemaven.com'        ; content { 'curse.maven'    } }
+	maven { url 'https://maven.gegy.dev/'                                      }
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	// Better Biome Blend
+	modApi 'curse.maven:better-biome-blend-446253:3615207'
+	
+	// DataBreaker
+	modRuntimeOnly 'supercoder79:databreaker:0.2.8', {
+		exclude module: 'fabric-loader'
+	}
+	
+	// Fabric API
+	modRuntimeOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	// Fabric Loader
+	modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+
+	// Minecraft
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+
+	// Official Mojang Mappings
+	mappings loom.officialMojangMappings()
+
+	// Sodium
+	modApi "maven.modrinth:sodium:mc${minecraft_version}-${sodium_version}"
 }
 
 processResources {
-	inputs.property "version", project.version
+	inputs.property 'version', project.version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+	filesMatching 'fabric.mod.json', {
+		expand 'better_biome_blend_version': project.better_biome_blend_version,
+		       'loader_version': project.loader_version,
+		       'minecraft_version': project.minecraft_version,
+		       'version': project.version,
+		       'sodium_version': project.sodium_version
 	}
 }
 
@@ -49,7 +64,7 @@ java {
 }
 
 jar {
-	from("LICENSE") {
+	from 'LICENSE', {
 		rename { "${it}_${project.archivesBaseName}"}
 	}
 }
@@ -57,7 +72,7 @@ jar {
 // configure the maven publication
 publishing {
 	publications {
-		mavenJava(MavenPublication) {
+		mavenJava MavenPublication, {
 			from components.java
 		}
 	}
